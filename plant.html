@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>식물 상 정리</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .plant-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .plant-entry {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            position: relative;
+        }
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-left: 10px;
+        }
+        .image-container img {
+            width: auto;
+            max-width: 300px;
+            max-height: 200px;
+            object-fit: contain;
+        }
+        .info-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-item label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .info-item .short-textarea {
+            width: 100%;
+            height: 50px;
+        }
+        .info-item .long-textarea {
+            width: 100%;
+            height: 100px;
+        }
+        .add-button, .delete-button {
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .delete-button {
+            background-color: #f44336;
+            margin-top: 10px;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPlants();
+
+            document.getElementById('add-plant').addEventListener('click', addPlantEntry);
+        });
+
+        function saveToLocalStorage() {
+            const plants = [];
+            document.querySelectorAll('.plant-entry').forEach(entry => {
+                const scientificName = entry.querySelector('.scientific-name').value;
+                const classification = entry.querySelector('.classification').value;
+                const features = entry.querySelector('.features').value;
+                const macroImg = entry.querySelector('.macro-img').src;
+                const zoomImg = entry.querySelector('.zoom-img').src;
+
+                plants.push({ scientificName, classification, features, macroImg, zoomImg });
+            });
+
+            localStorage.setItem('plants', JSON.stringify(plants));
+        }
+
+        function loadPlants() {
+            const plants = JSON.parse(localStorage.getItem('plants')) || [];
+
+            plants.forEach(plant => {
+                addPlantEntry(plant);
+            });
+        }
+
+        function addPlantEntry(plant = {}) {
+            const plantContainer = document.createElement('div');
+            plantContainer.className = 'plant-entry';
+
+            plantContainer.innerHTML = `
+                <div class="image-container">
+                    <input type="file" accept="image/*" onchange="loadImage(event, this, 'macro-img')" />
+                    <img src="${plant.macroImg || ''}" alt="접사 사진" class="macro-img" />
+                    <input type="file" accept="image/*" onchange="loadImage(event, this, 'zoom-img')" />
+                    <img src="${plant.zoomImg || ''}" alt="망원 사진" class="zoom-img" />
+                </div>
+                <div class="info-container">
+                    <div class="info-item">
+                        <label for="scientific-name">학명</label>
+                        <textarea class="scientific-name short-textarea" placeholder="학명을 입력하세요...">${plant.scientificName || ''}</textarea>
+                    </div>
+                    <div class="info-item">
+                        <label for="classification">분류</label>
+                        <textarea class="classification short-textarea" placeholder="분류를 입력하세요...">${plant.classification || ''}</textarea>
+                    </div>
+                    <div class="info-item">
+                        <label for="features">특징</label>
+                        <textarea class="features long-textarea" placeholder="특징을 입력하세요...">${plant.features || ''}</textarea>
+                    </div>
+                </div>
+                <button class="delete-button" onclick="deletePlant(this)">삭제</button>
+            `;
+
+            document.querySelector('.plant-container').appendChild(plantContainer);
+
+            plantContainer.querySelectorAll('textarea').forEach(textarea => {
+                textarea.addEventListener('input', saveToLocalStorage);
+            });
+        }
+
+        function loadImage(event, input, imgClass) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const imgElement = input.parentElement.querySelector('.' + imgClass);
+                imgElement.src = reader.result;
+                saveToLocalStorage();
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function deletePlant(button) {
+            const plantContainer = button.parentElement;
+            plantContainer.remove();
+            saveToLocalStorage();
+        }
+    </script>
+</head>
+<body>
+    <div class="plant-container">
+    </div>
+    <button id="add-plant" class="add-button">새로운 식물 추가</button>
+</body>
+</html>
